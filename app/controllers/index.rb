@@ -19,7 +19,26 @@ get '/auth' do
   session.delete(:request_token)
 
   # at this point in the code is where you'll need to create your user account and store the access token
+  current_user = User.find_or_create_by_username(
+    :username => @access_token.params[:screen_name],
+    :oauth_token => @access_token.token,
+    :oauth_secret => @access_token.secret
+    )
+
+  session[:current_user] = current_user
 
   erb :index
-  
+end
+
+post '/' do
+  @twitter_username = session[:current_user].username
+
+  twitter_user = Twitter::Client.new(
+    :oauth_token => session[:current_user].oauth_token,
+    :oauth_token_secret => session[:current_user].oauth_secret
+  )
+
+  twitter_user.update(params[:tweet_text])
+
+  redirect to '/'
 end
